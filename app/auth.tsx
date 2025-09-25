@@ -1,3 +1,5 @@
+import { useAuth } from '@/lib/auth-context';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { Button, Text, TextInput, useTheme } from 'react-native-paper';
@@ -8,6 +10,10 @@ export default function AuthScreen() {
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string | null>('');
 
+  const theme = useTheme();
+  const { signUp, signIn } = useAuth();
+  const router = useRouter();
+
   const handleSwitchMode = () => {
     setIsSignup(prev => !prev);
   };
@@ -17,6 +23,26 @@ export default function AuthScreen() {
       setError('Please fill in all fields');
       return;
     }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+    setError(null);
+
+    if (isSignup) {
+      const error = await signUp(email, password);
+      if (error) {
+        setError(error);
+        return;
+      }
+    } else {
+      const error = await signIn(email, password);
+      if (error) {
+        setError(error);
+        return;
+      }
+    }
+    router.replace('/');
   };
 
   return (
@@ -36,7 +62,7 @@ export default function AuthScreen() {
           style={styles.input}
           onChangeText={setEmail}
         />
-        {error && <Text style={{ color: 'red' }}>{error}</Text>}
+        {error && <Text style={{ color: theme.colors.error }}>{error}</Text>}
         <TextInput
           placeholder="Password"
           autoCapitalize="none"
